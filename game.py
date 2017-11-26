@@ -19,27 +19,7 @@ class Game:
         [_, chess, chessAft] = self.m_chessBoard.oneStep(self.m_aiChess, self.m_playerChess, 1)
         print "moving " + str(chess) + ", to" + str(chessAft)
         self.m_chessBoard.moveChess(self.m_chessBoard.m_player2, self.m_playerChess, chess, chessAft)
-#
-#def avgO(chessboard) :
-#     board = chessboard.board
-#     dis = 0, count = 0
-#     for(y in len(board)) :
-#         for(x in len(board[y])) :
-#               if(board[y][x] == 'O') :
-#                    count++
-#                    dis += abs(11 - y) + abs(3-x)
-#     return float(dis/count)
-#
-#def avgX(chessboard) :
-#     board = chessboard.board
-#     dis = 0, count = 0
-#     for(y in len(board)) :
-#         for(x in len(board[y])) :
-#               if(board[y][x] == 'X') :
-#                    count++
-#                    dis += abs(11 - y) + abs(3-x)
-#     return float(dis/count)
-#
+
 if __name__ == '__main__':
     g = Game()
     board = g.m_chessBoard

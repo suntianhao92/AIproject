@@ -188,6 +188,9 @@ class ChessBoard :
     def isValid(self, pos_x, pos_y):
         if (pos_x< 0 or pos_x >= self.m_rows) or (pos_y < 0 or pos_y >= self.m_cols):
             return False
+        chess = Chess(pos_x, pos_y)
+        if (chess in self.m_player1.m_chesses or chess in self.m_player2.m_chesses):
+            return False
         return self.m_initBoard[pos_x][pos_y] in ['.', '*'] 
 
 
@@ -236,6 +239,8 @@ class TestChessBoardMethods(unittest.TestCase):
         # capture move
         chess.set(8,1)
         self.assertEqual(b.Status.CAPTURE, b.move(chess, [1,1], playerChess, oppoChess))
+        chess.set(10, 1)
+        self.assertEqual(b.Status.INVALID, b.move(chess, [-1,1], playerChess, oppoChess))
 
 if __name__ == '__main__':
         unittest.main()
