@@ -26,16 +26,28 @@ if __name__ == '__main__':
     playerChess= board.m_player1.m_chesses
     oppoChess = board.m_player2.m_chesses
     steps = 0
+    win = GraphWin('Game', 400, 700)
     while not g.end():
+        win.autoflush = False
+        g.m_chessBoard.displayBoard(win)
+        g.m_chessBoard.displayChess(win)
+        win.flush()
+        win.autoflush = True
         if  steps % 2 == 0:
             g.printChessTable()
             g.printPlayerChess()
-            x = input("Enter x pos of your chess: ")
-            y = input("Enter x pos of your chess: ")
-            delta_x = input("Enter delta_x direction of your chess: ")
-            delta_y = input("Enter delta_y direction of your chess: ")
-            if not board.move(Chess(x,y), [delta_x, delta_y], playerChess, oppoChess) == board.Status.INVALID:
-                g.movePlayerChess(Chess(x,y), Chess(x+delta_x, y+delta_y))
+            [i, j] = g.m_chessBoard.position2Index(win.getMouse())
+            preChess = Chess(j, i)
+            g.m_chessBoard.highlightChess(win, preChess) 
+            [i, j] = g.m_chessBoard.position2Index(win.getMouse())
+            aftChess = Chess(j, i)
+            #x = input("Enter x pos of your chess: ")
+            #y = input("Enter x pos of your chess: ")
+            #delta_x = input("Enter delta_x direction of your chess: ")
+            #delta_y = input("Enter delta_y direction of your chess: ")
+            [delta_x, delta_y] = g.m_chessBoard.chessDirection(preChess, aftChess)
+            if not board.move(preChess, [delta_x, delta_y], playerChess, oppoChess) == board.Status.INVALID:
+                g.movePlayerChess(preChess, aftChess)
             else:
                 print ("Invalid move")
         else:

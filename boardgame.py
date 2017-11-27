@@ -1,3 +1,5 @@
+from graphics import *
+
 from enum import Enum
 from copy import copy, deepcopy
 import unittest
@@ -53,9 +55,14 @@ class ChessBoard :
         CAPTURE = 3
         WIN = 4
 
-    def __init__(self):
+    def __init__(self, height = 700, width = 400):
+        self.m_winHeight = height
+        self.m_winWidth = width
         self.m_rows = 14
         self.m_cols = 8
+        self.m_chessH = height/self.m_rows
+        self.m_chessW = width/self.m_cols
+        self.m_chessR = self.m_chessH*0.4
         self.MAX_STEPS = 3
         self.m_initBoard = [['#','#','#','.','.','#','#','#'],
                 ['#','#','.','*','*','.','#','#'],
@@ -74,6 +81,53 @@ class ChessBoard :
         self.m_player1 = Player("player", [[4,2],[4,3],[4,4],[4,5],[5,3],[5,4]])
         self.m_player2 = Player("computer", [[9,2],[9,3],[9,4],[9,5],[8,3],[8,4]])
         self.m_curBoard = [] 
+
+    """display chessboard"""
+    def displayBoard(self, win):
+        for i in range(self.m_rows):
+            for j in range(self.m_cols):
+                # skip '#' board
+                if self.m_initBoard[i][j] == '#':
+                    continue
+                cur_x = j*self.m_chessW
+                cur_y = i*self.m_chessH
+                box = Rectangle(Point(cur_x, cur_y), Point(cur_x+self.m_chessW, cur_y+self.m_chessH))
+                if self.m_initBoard[i][j] == '*':
+                    box.setFill("white")
+                else:
+                    box.setFill("green")
+                box.draw(win)
+
+    """display chess"""
+    def displayChess(self, win):
+        for chess in self.m_player1.m_chesses:
+            circle = Circle(Point(chess.m_y*self.m_chessW + self.m_chessW/2, chess.m_x*self.m_chessH + self.m_chessH/2), self.m_chessR) 
+            circle.setFill("black")
+            circle.draw(win)
+        for chess in self.m_player2.m_chesses:
+            circle = Circle(Point(chess.m_y*self.m_chessW + self.m_chessW/2, chess.m_x*self.m_chessH + self.m_chessH/2), self.m_chessR) 
+            circle.setFill("blue")
+            circle.draw(win)
+
+    """set choose chess to grey"""
+    def highlightChess(self, win, chess):
+        circle = Circle(Point(chess.m_y*self.m_chessW + self.m_chessW/2, chess.m_x*self.m_chessH+self.m_chessH/2), self.m_chessR)
+        circle.setFill("gray")
+        circle.draw(win)
+
+    """convert win position to chess index"""
+    def position2Index(self, point):
+        return int(point.x/self.m_chessW), int(point.y/self.m_chessH)
+
+    """return direction of two chess"""
+    def chessDirection(self, preChess, aftChess):
+        delta_x = aftChess.m_x - preChess.m_x
+        if not delta_x == 0:
+            delta_x = delta_x / abs(delta_x)
+        delta_y = aftChess.m_y - preChess.m_y
+        if not delta_y == 0:
+            delta_y = delta_y / abs(delta_y)
+        return delta_x,delta_y
 
     """set max steps, eq to set level of AI"""
     def setMaxSteps(self, l):
@@ -99,10 +153,10 @@ class ChessBoard :
     """return true when there is a winner"""
     def win(self):
         self.applyPlayer()
-        if(self.m_curBoard[0][0] == 'X' and self.m_curBoard[0][1] == 'X') : 
-            return true
-        if(self.m_curBoard[11][3] == 'O' and self.m_curBoard[11][4] == 'O') : 
-            return true
+        if(self.m_curBoard[1][3] == 'X' and self.m_curBoard[1][4] == 'X') : 
+            return True
+        if(self.m_curBoard[12][3] == 'O' and self.m_curBoard[12][4] == 'O') : 
+            return True
         return self.m_player1.size() <= 2 or self.m_player2.size() <= 2
 
     """return score of current step"""
