@@ -41,13 +41,12 @@ if __name__ == '__main__':
             g.m_chessBoard.highlightChess(win, preChess) 
             [i, j] = g.m_chessBoard.position2Index(win.getMouse())
             aftChess = Chess(j, i)
-            #x = input("Enter x pos of your chess: ")
-            #y = input("Enter x pos of your chess: ")
-            #delta_x = input("Enter delta_x direction of your chess: ")
-            #delta_y = input("Enter delta_y direction of your chess: ")
             [delta_x, delta_y] = g.m_chessBoard.chessDirection(preChess, aftChess)
-            if not board.move(preChess, [delta_x, delta_y], playerChess, oppoChess) == board.Status.INVALID:
-                g.movePlayerChess(preChess, aftChess)
+            status = board.move(preChess, [delta_x, delta_y], playerChess, oppoChess)
+            if status == g.m_chessBoard.Status.PLAIN:
+                g.movePlayerChess(preChess, Chess(preChess.m_x+delta_x, preChess.m_y+delta_y))
+            elif status in [g.m_chessBoard.Status.CAPTURE, g.m_chessBoard.Status.CANTER]:
+                g.movePlayerChess(preChess, Chess(preChess.m_x+delta_x*2, preChess.m_y+delta_y*2))
             else:
                 print ("Invalid move")
         else:

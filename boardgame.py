@@ -123,10 +123,10 @@ class ChessBoard :
     def chessDirection(self, preChess, aftChess):
         delta_x = aftChess.m_x - preChess.m_x
         if not delta_x == 0:
-            delta_x = delta_x / abs(delta_x)
+            delta_x = 1 if delta_x > 0 else -1
         delta_y = aftChess.m_y - preChess.m_y
         if not delta_y == 0:
-            delta_y = delta_y / abs(delta_y)
+            delta_y = 1 if delta_y > 0 else -1 
         return delta_x,delta_y
 
     """set max steps, eq to set level of AI"""
@@ -159,12 +159,28 @@ class ChessBoard :
             return True
         return self.m_player1.size() <= 2 or self.m_player2.size() <= 2
 
-    """return score of current step"""
-    def getScore(self, chess, d, status):
-        return 0
+    """return score of current step, with manhattan distance"""
+    def getScore(self, preChess, aftChess, curStep):
+        cc = 1 if curStep%2 == 1 else 13
+        castles = [[cc, 3], [cc, 4]]
+        preDis = 0
+        aftDis = 0
+        for c in castles:
+            preDis = abs(preChess.m_x - c[0]) + abs(preChess.m_y - c[1])
+            aftDis = abs(aftChess.m_x - c[0]) + abs(aftChess.m_y - c[1]) 
+        return  preDis*preDis - aftDis*aftDis
 
-    """iterate all possible next move, return max score of current step"""
-    def oneStep(self, myChess, oppoChess, curStep):
+    """iterate all possible next move, return max score of current step,
+    for any player, it will try to maximize the return score, 
+    alpha == beta in this case, basic ranking of evaluation
+    1. Capture
+    2. Win
+    3. get cloer to enemy castle 
+    TODO: 
+    1. add priority of capturing enemy chess instead of castle
+    2. add priority of protection
+    """
+    def oneStep(self, myChess, oppoChess, curStep, alpha = 1000):
         maxScore = - (sys.maxint - 1)
         maxChessPrev = Chess()
         maxChessAft = Chess() 
@@ -185,9 +201,12 @@ class ChessBoard :
                 elif (nx_status == self.Status.CAPTURE):
                     remove_oppo = True
                     nx_chess = Chess(chess.m_x + d[0]*2, chess.m_y + d[1]*2)
-                    nx_score = 200
+                    # enemy chess must be captured whenever possible
+                    nx_score = 100
                 elif (nx_status == self.Status.CANTER):
                     nx_chess = Chess(chess.m_x + d[0]*2, chess.m_y + d[1]*2)
+                # add score if this move make chess closer to enemy castle
+                nx_score += self.getScore(chess, nx_chess, curStep)
 
                 myChess.remove(chess)
                 myChess.append(nx_chess)
@@ -195,7 +214,7 @@ class ChessBoard :
                     oppoChess.remove(Chess(chess.m_x + d[0], chess.m_y + d[1]))
                 # get score
                 if self.win():
-                    nx_score += 300
+                    nx_score += 200
                 [mx_nx_score, _, _] = self.oneStep(oppoChess, myChess, curStep + 1)
                 nx_score -= mx_nx_score 
                 if nx_score > maxScore:
@@ -246,7 +265,6 @@ class ChessBoard :
         if (chess in self.m_player1.m_chesses or chess in self.m_player2.m_chesses):
             return False
         return self.m_initBoard[pos_x][pos_y] in ['.', '*'] 
-
 
 class TestPlayerMethods(unittest.TestCase):
     def test_print(self):
