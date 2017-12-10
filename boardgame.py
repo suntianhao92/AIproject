@@ -37,6 +37,8 @@ class Player :
 
     def size(self):
         return len(self.m_chesses)
+    def empty(self):
+        return self.size() == 0
 
     def setChess(self, positions):
         self.m_chesses = []
@@ -64,8 +66,8 @@ class ChessBoard :
         self.m_chessW = width/self.m_cols
         self.m_chessR = self.m_chessH*0.4
         self.MAX_STEPS = 3
-        self.m_initBoard = [['#','#','#','.','.','#','#','#'],
-                ['#','#','.','*','*','.','#','#'],
+        self.m_initBoard = [['#','#','#','*','*','#','#','#'],
+                ['#','#','.','.','.','.','#','#'],
                 ['#','.','.','.','.','.','.','#'],
                 ['.','.','.','.','.','.','.','.'],
                 ['.','.','.','.','.','.','.','.'],
@@ -76,8 +78,8 @@ class ChessBoard :
                 ['.','.','.','.','.','.','.','.'],
                 ['.','.','.','.','.','.','.','.'],
                 ['#','.','.','.','.','.','.','#'],
-                ['#','#','.','*','*','.','#','#'],
-                ['#','#','#','.','.','#','#','#']]
+                ['#','#','.','.','.','.','#','#'],
+                ['#','#','#','*','*','#','#','#']]
         self.m_player1 = Player("player", [[4,2],[4,3],[4,4],[4,5],[5,3],[5,4]])
         self.m_player2 = Player("computer", [[9,2],[9,3],[9,4],[9,5],[8,3],[8,4]])
         self.m_curBoard = [] 
@@ -153,22 +155,34 @@ class ChessBoard :
     """return true when there is a winner"""
     def win(self):
         self.applyPlayer()
-        if(self.m_curBoard[1][3] == 'X' and self.m_curBoard[1][4] == 'X') : 
+        if(self.m_curBoard[0][3] == 'X' and self.m_curBoard[0][4] == 'X') : 
             return True
-        if(self.m_curBoard[12][3] == 'O' and self.m_curBoard[12][4] == 'O') : 
+        if(self.m_curBoard[13][3] == 'O' and self.m_curBoard[13][4] == 'O') : 
             return True
-        return self.m_player1.size() <= 2 or self.m_player2.size() <= 2
+        return (self.m_player1.size() >= 2 and self.m_player2.empty()) or (self.m_player2.size() >= 2 and self.m_player1.empty())
 
-    """return score of current step, with manhattan distance"""
-    def getScore(self, preChess, aftChess, curStep):
-        cc = 1 if curStep%2 == 1 else 13
-        castles = [[cc, 3], [cc, 4]]
-        preDis = 0
-        aftDis = 0
-        for c in castles:
-            preDis = abs(preChess.m_x - c[0]) + abs(preChess.m_y - c[1])
-            aftDis = abs(aftChess.m_x - c[0]) + abs(aftChess.m_y - c[1]) 
-        return  preDis*preDis - aftDis*aftDis
+    """return score at leaf node, calc with manhattan distance"""
+    def getScore(self):
+        player1Score = 20 * self.m_player1.size()
+        player2Score = 20 * self.m_player2.size()
+        # take cloest two chess only
+        dis1 = []
+        dis2 = []
+        for chess1 in self.m_player1.m_chesses:
+            dis1.append(min(abs(chess1.m_x-13)+abs(chess1.m_y-3), abs(chess1.m_x-13)+abs(chess1.m_y-4)))
+        dis1.sort()
+        for chess2 in self.m_player2.m_chesses:
+            dis2.append(min(abs(chess2.m_x-0)+abs(chess2.m_y-3), abs(chess2.m_x-0)+abs(chess2.m_y-4)))
+        dis2.sort()
+        return player2Score-sum(dis2[:2]) - (player1Score - sum(dis1[:2])) 
+
+
+    def reverseMove(self, myChess, oppoChess, chessPrev, chessAft, remove_oppo, d):
+        myChess.remove(chessAft)
+        myChess.append(chessPrev)
+        if remove_oppo:
+            oppoChess.append(Chess(chessPrev.m_x + d[0], chessPrev.m_y + d[1]))
+
 
     """iterate all possible next move, return max score of current step,
     for any player, it will try to maximize the return score, 
@@ -180,12 +194,12 @@ class ChessBoard :
     1. add priority of capturing enemy chess instead of castle
     2. add priority of protection
     """
-    def oneStep(self, myChess, oppoChess, curStep, alpha = 1000):
-        maxScore = - (sys.maxint - 1)
+    def oneStep(self, myChess, oppoChess, curStep, alpha = -100000, beta = 100000):
+        bestScore = -50000 if curStep%2 == 1 else 50000 
+        captureScore = -bestScore * 0.3
+        winScore = -bestScore * 0.5
         maxChessPrev = Chess()
         maxChessAft = Chess() 
-        if curStep == self.MAX_STEPS:
-            return 0, maxChessPrev, maxChessAft 
         directions = [[-1,-1], [-1,0],[-1,1],[0,1],[0,-1],[1,-1],[1,0],[1,1]]
         # iterate all chess
         for chess in myChess:
@@ -193,8 +207,8 @@ class ChessBoard :
             for d in directions:
                 nx_status = self.move(chess, d, myChess, oppoChess)
                 # move chess
-                nx_chess = Chess(chess.m_x + d[0]*1, chess.m_y + d[1]*1)
                 nx_score = 0
+                nx_chess = Chess(chess.m_x + d[0]*1, chess.m_y + d[1]*1)
                 remove_oppo = False
                 if (nx_status == self.Status.INVALID):
                     continue
@@ -202,32 +216,48 @@ class ChessBoard :
                     remove_oppo = True
                     nx_chess = Chess(chess.m_x + d[0]*2, chess.m_y + d[1]*2)
                     # enemy chess must be captured whenever possible
-                    nx_score = 100
+                    # reverse move
+                    nx_score = captureScore
                 elif (nx_status == self.Status.CANTER):
                     nx_chess = Chess(chess.m_x + d[0]*2, chess.m_y + d[1]*2)
-                # add score if this move make chess closer to enemy castle
-                nx_score += self.getScore(chess, nx_chess, curStep)
-
                 myChess.remove(chess)
                 myChess.append(nx_chess)
                 if remove_oppo:
                     oppoChess.remove(Chess(chess.m_x + d[0], chess.m_y + d[1]))
-                # get score
+                    
                 if self.win():
-                    nx_score += 200
-                [mx_nx_score, _, _] = self.oneStep(oppoChess, myChess, curStep + 1)
-                nx_score -= mx_nx_score 
-                if nx_score > maxScore:
-                    maxScore = nx_score
-                    maxChessPrev = chess
-                    maxChessAft = nx_chess
+                    # reverse move
+                    self.reverseMove(myChess, oppoChess, chess, nx_chess, remove_oppo, d)
+                    return winScore, maxChessPrev, maxChessAft
 
+                # add score if this move make chess closer to enemy castle
+                if curStep == self.MAX_STEPS:
+                    nx_score += self.getScore()
+
+                # get score
+                [tmp_nx, _, _] = self.oneStep(oppoChess, myChess, curStep + 1, alpha, beta) if curStep < self.MAX_STEPS else [0,0,0]
+                nx_score += tmp_nx
                 # reverse move
-                myChess.remove(nx_chess)
-                myChess.append(chess)
-                if remove_oppo:
-                    oppoChess.append(Chess(chess.m_x + d[0], chess.m_y + d[1]))
-        return maxScore, maxChessPrev, maxChessAft
+                self.reverseMove(myChess, oppoChess, chess, nx_chess, remove_oppo, d)
+
+                # alphat-beta early return
+                if curStep%2 == 1:
+                    # AI move (maximizer)
+                    if nx_score > bestScore:
+                        bestScore = nx_score
+                        maxChessPrev = chess
+                        maxChessAft = nx_chess
+                    alpha = max(alpha, bestScore)
+                else:
+                    # player move (minimizer)
+                    if nx_score < bestScore:
+                        bestScore = nx_score
+                        maxChessPrev = chess
+                        maxChessAft = nx_chess
+                    beta = min(beta, bestScore)
+                if alpha >= beta:
+                    return bestScore, maxChessPrev, maxChessAft
+        return bestScore, maxChessPrev, maxChessAft
             
     """return status of current move"""
     def move(self, chess, nxD, myChess, oppoChess):

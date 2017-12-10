@@ -22,6 +22,7 @@ class Game:
 
 if __name__ == '__main__':
     g = Game()
+    g.setMaxSteps(4)
     board = g.m_chessBoard
     playerChess= board.m_player1.m_chesses
     oppoChess = board.m_player2.m_chesses
@@ -38,6 +39,8 @@ if __name__ == '__main__':
             g.printPlayerChess()
             [i, j] = g.m_chessBoard.position2Index(win.getMouse())
             preChess = Chess(j, i)
+            if not preChess in playerChess:
+                continue
             g.m_chessBoard.highlightChess(win, preChess) 
             [i, j] = g.m_chessBoard.position2Index(win.getMouse())
             aftChess = Chess(j, i)
