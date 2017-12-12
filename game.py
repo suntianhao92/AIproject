@@ -10,6 +10,8 @@ class Game:
         print (self.m_chessBoard)
     def printPlayerChess(self):
         print (self.m_chessBoard.m_player1)
+    def printAIChess(self):
+        print (self.m_chessBoard.m_player2)
     def movePlayerChess(self, chessPrev, chessAft):
         self.m_chessBoard.moveChess(self.m_chessBoard.m_player1, self.m_aiChess, chessPrev, chessAft)
     def setMaxSteps(self, s):
@@ -22,7 +24,7 @@ class Game:
 
 if __name__ == '__main__':
     g = Game()
-    g.setMaxSteps(4)
+    g.setMaxSteps(3)
     board = g.m_chessBoard
     playerChess= board.m_player1.m_chesses
     oppoChess = board.m_player2.m_chesses
@@ -37,6 +39,7 @@ if __name__ == '__main__':
         if  steps % 2 == 0:
             g.printChessTable()
             g.printPlayerChess()
+            g.printAIChess()
             [i, j] = g.m_chessBoard.position2Index(win.getMouse())
             preChess = Chess(j, i)
             if not preChess in playerChess:

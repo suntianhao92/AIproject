@@ -163,8 +163,8 @@ class ChessBoard :
 
     """return score at leaf node, calc with manhattan distance"""
     def getScore(self):
-        player1Score = 20 * self.m_player1.size()
-        player2Score = 20 * self.m_player2.size()
+        player1Score = 15 * self.m_player1.size()
+        player2Score = 15 * self.m_player2.size()
         # take cloest two chess only
         dis1 = []
         dis2 = []
@@ -195,9 +195,9 @@ class ChessBoard :
     2. add priority of protection
     """
     def oneStep(self, myChess, oppoChess, curStep, alpha = -100000, beta = 100000):
-        bestScore = -50000 if curStep%2 == 1 else 50000 
-        captureScore = -bestScore * 0.3
-        winScore = -bestScore * 0.5
+        bestScore = -10000 if curStep%2 == 1 else 10000
+        captureScore = -int(bestScore * 0.1)
+        winScore = -int(bestScore * 0.3)
         maxChessPrev = Chess()
         maxChessAft = Chess() 
         directions = [[-1,-1], [-1,0],[-1,1],[0,1],[0,-1],[1,-1],[1,0],[1,1]]
@@ -218,6 +218,7 @@ class ChessBoard :
                     # enemy chess must be captured whenever possible
                     # reverse move
                     nx_score = captureScore
+                    return nx_score, chess, nx_chess 
                 elif (nx_status == self.Status.CANTER):
                     nx_chess = Chess(chess.m_x + d[0]*2, chess.m_y + d[1]*2)
                 myChess.remove(chess)
@@ -228,14 +229,14 @@ class ChessBoard :
                 if self.win():
                     # reverse move
                     self.reverseMove(myChess, oppoChess, chess, nx_chess, remove_oppo, d)
-                    return winScore, maxChessPrev, maxChessAft
+                    return winScore, nx_chess, chess
 
                 # add score if this move make chess closer to enemy castle
                 if curStep == self.MAX_STEPS:
                     nx_score += self.getScore()
 
                 # get score
-                [tmp_nx, _, _] = self.oneStep(oppoChess, myChess, curStep + 1, alpha, beta) if curStep < self.MAX_STEPS else [0,0,0]
+                [tmp_nx, _, _] = self.oneStep(oppoChess, myChess, curStep + 1, alpha, beta) if curStep <= self.MAX_STEPS else [nx_score,0,0]
                 nx_score += tmp_nx
                 # reverse move
                 self.reverseMove(myChess, oppoChess, chess, nx_chess, remove_oppo, d)
